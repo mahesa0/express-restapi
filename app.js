@@ -2,15 +2,17 @@ var express = require("express");
 var path = require("path");
 var cookieParser = require("cookie-parser");
 var logger = require("morgan");
-//deklarasi body-parser
+//Tambahkan body-parser
 var bodyParser = require("body-parser");
-//deklarasi jwt modul
+//Tambahkan assert
+var assert = require("assert");
 const jwt = require("jsonwebtoken");
 
 var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/users");
 
 var app = express();
+const port = 3000;
 
 app.use(logger("dev"));
 app.use(express.json());
@@ -18,8 +20,9 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
-//gunakan body-parser sebagai middleware
+// gunakan body parser sebgai middleware
 app.use(bodyParser.json());
+
 // data yang kita gunakan adalah kelas pada karakter game
 var kelas = [
   { id: 1, nama_kelas: "Backend" },
@@ -27,71 +30,119 @@ var kelas = [
   { id: 3, nama_kelas: "Fullstack" },
 ];
 
-app.get("/api/kelas", (req, res, next) => {
-  res.json({ data: kelas }).send({ data: kelas });
-  next();
-});
-
-app.get("/api/kelas/:id", (req, res) => {
-  const kls = kelas.find((k) => k.id === parseInt(req.params.id));
-  if (!kls) res.status(404).send("Kelas tidak ditemukan");
-  res.json({ data: kls }).send({ data: kls });
-  return;
-});
-
-//menambahkan data
-app.post("/api/kelas", (req, res) => {
-  //kondisi apabila nama kelas kosong
-  if (!req.body.nama_kelas) {
-    //menampilkan pesan error ketika nama kelas kosong
-    res.status(400).send("Nama kelas tidak boleh kosong");
-    return;
+//get all kelas
+app.get("/api/kelas", function (req, res, next) {
+  try {
+    // res.json({ data: kelas });
+    // res.send({ data: kelas });
+    res.send(err);
+  } catch (err) {
+    //melemparkan exception
+    next(err);
   }
-  const kls = {
-    id: kelas.length + 1,
-    nama_kelas: req.body.nama_kelas,
-  };
-  kelas.push(kls);
-  res.send(kls);
 });
 
-//mengupdate data
-app.put("/api/kelas/:id", (req, res) => {
-  //cek id kelas
-  const klas = kelas.find((k) => k.id === parseInt(req.params.id));
-  if (!klas) res.status(404).send("Kelas tidak ditemukan"); //tampilkan status 404 jika field kelas tidak ditemukan
+// app.get("/api/kelas/:id", function (req, res) {
+//   try {
+//     // const kls = kelas.find((k) => k.id === parseInt(req.params.id));
+//     // assert(kls, `ID Kelas ${req.params.id} tidak ditemukan`);
+//     // res.status(200).json({ data: kls });
+//     // res.send({ data: kls });
+//     res.send(err);
+//   } catch (err) {
+//     //tampilkan status 500
+//     res
+//       .status(500)
+//       .json({ error: "INTERNAL_SERVER_ERROR", message: err.message });
+//   }
+// });
 
-  if (!req.body.nama_kelas) {
-    //menampilkan pesan error jika nama kelas kosong
-    res.status(404).send("Nama kelas harus diisi");
-    return;
+// get kelas by id
+app.get("/api/kelas/:id", function (req, res) {
+  try {
+    const kls = kelas.find((k) => k.id === parseInt(req.params.id));
+    assert(kls, `ID Kelas ${req.params.id} tidak ditemukan`);
+    res.status(200).json({ data: kls });
+    res.send({ data: kls });
+    res.send(err);
+  } catch (err) {
+    if (err.name === "AssertionError") {
+      res.status(404).json({ error: err.message });
+    } else {
+      res.status(500).json({ error: err.message });
+    }
   }
-
-  klas.nama_kelas = req.body.nama_kelas;
-  res.send({ pesan: "Data berhasil diupdate", data: klas });
 });
 
-//menghapus data
-app.delete("/api/kelas/:id", (req, res) => {
-  //cek id kelas
-  const klas = kelas.find((k) => k.id === parseInt(req.params.id));
-  if (!klas) res.status(404).send("Kelas tidak ditemukan"); //tampilkan status 404 jika field kelas tidak ditemukan
+// Menambahkan data
+app.post("/api/kelas", function (req, res) {
+  try {
+    //Kondisi apabila nama kelas kosong
+    if (!req.body.nama_kelas) {
+      // Menampilkan pesan error ketika field nama kelas kosong
+      res.status(400).send("Nama kelas harus diisi");
+      return;
+    }
 
-  const index = kelas.indexOf(klas);
-  kelas.splice(index, 1);
-  res.send({ pesan: "Data behasil dihapus", data: klas });
+    const kls = {
+      id: kelas.length + 1,
+      nama_kelas: req.body.nama_kelas,
+    };
+    kelas.push(kls);
+    res.send(kls);
+    res.send(err);
+  } catch (err) {
+    next(err);
+  }
+});
+// Mengupdate data
+app.put("/api/kelas/:id", function (req, res) {
+  try {
+    //Cek id kelas
+    const klas = kelas.find((k) => k.id === parseInt(req.params.id));
+    if (!klas) res.status(404).send("Kelas tidak ditemukan"); // tampilkan status 404
+
+    if (!req.body.nama_kelas) {
+      // Menampilkan pesan error ketika field nama kelas kosong
+      res.status(400).send("Nama kelas harus diisi");
+      return;
+    }
+
+    klas.nama_kelas = req.body.nama_kelas;
+    res.send({ pesan: "Data berhasil diupdate.", data: klas });
+    res.send(err);
+  } catch (err) {
+    next(err);
+  }
+});
+// Menghapus data
+app.delete("/api/kelas/:id", function (req, res) {
+  try {
+    //Cek id kelas
+    const klas = kelas.find((k) => k.id === parseInt(req.params.id));
+    if (!klas) res.status(404).send("Kelas tidak ditemukan"); // tampilkan status 404
+
+    const index = kelas.indexOf(klas);
+    kelas.splice(index, 1);
+    res.send({ pesan: "Data berhasil dihapus.", data: klas });
+    res.send(err);
+  } catch (err) {
+    next(err);
+  }
 });
 
-//auth jwt
+//jwt
 app.post("/api/login", (req, res) => {
   const user = {
     id: Date.now(),
     userEmail: "admin@gamelab.id",
     password: "gamelab",
   };
-  //untuk generate token user
+  //Untuk generate token user
   jwt.sign({ user }, "secretkey", (err, token) => {
-    res.json({ token });
+    res.json({
+      token,
+    });
   });
 });
 
@@ -126,6 +177,18 @@ function verifyToken(req, res, next) {
     res.sendStatus(403);
   }
 }
+
+app.listen(3000, () => {
+  console.log(`listening on port ${port}`);
+});
+
+// app.use((err, req, res, next) => {
+//   res.status(500).json({
+//     status: false,
+//     name: err.name,
+//     message: err.message,
+//   });
+// });
 
 app.use("/", indexRouter);
 app.use("/users", usersRouter);
